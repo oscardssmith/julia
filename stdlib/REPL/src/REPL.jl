@@ -97,6 +97,9 @@ function softscope(@nospecialize ex)
     return ex
 end
 
+# Temporary alias until Documenter updates
+const softscope! = softscope
+
 const repl_ast_transforms = Any[softscope] # defaults for new REPL backends
 
 function eval_user_input(@nospecialize(ast), backend::REPLBackend)
