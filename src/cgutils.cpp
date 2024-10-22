@@ -4518,7 +4518,7 @@ static jl_cgval_t emit_const_len_memorynew(jl_codectx_t &ctx, jl_datatype_t *typ
         overflow |= __builtin_add_overflow(nbytes, nel, &nbytes);
     }
     if (overflow)
-        emit_error(ctx, prepare_call(jlargumenterror_func), "invalid GenericMemory size: too large for system address width");
+        emit_error(ctx, prepare_call(jlargumenterror_func), "invalid GenericMemory size: the number of elements is either negative or too large for system address width");
 
     auto ct = get_current_task(ctx);
     auto T_size = ctx.types().T_size;
@@ -4647,7 +4647,7 @@ static jl_cgval_t emit_memorynew(jl_codectx_t &ctx, jl_datatype_t *typ, jl_cgval
     Value *negnel = ctx.builder.CreateICmpSLT(nel_unboxed, ConstantInt::get(T_size, 0));
     overflow = ctx.builder.CreateOr(overflow, negnel);
     Value *notoverflow = ctx.builder.CreateNot(overflow);
-    error_unless(ctx, prepare_call(jlargumenterror_func), notoverflow, "invalid GenericMemory size: too large for system address width");
+    error_unless(ctx, prepare_call(jlargumenterror_func), notoverflow, "invalid GenericMemory size: the number of elements is either negative or too large for system address width");
     // actually allocate
     auto call = prepare_call(jl_alloc_genericmemory_unchecked_func);
     Value *alloc = ctx.builder.CreateCall(call, { ptls, nbytes, cg_typ});
