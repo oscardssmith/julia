@@ -1999,12 +1999,7 @@ end
 
 @nospecs function memorynew_tfunc(𝕃::AbstractLattice, memtype, m)
     hasintersect(widenconst(m), Int) || return Bottom
-    if isa(memtype, Const)
-        mem = memtype.val
-        mem <: GenericMemory || return Bottom
-        return mem
-    end
-    return GenericMemory
+    return tmeet(𝕃, instanceof_tfunc(memtype, true)[1], GenericMemory)
 end
 add_tfunc(Core.memorynew, 2, 2, memorynew_tfunc, 10)
 
