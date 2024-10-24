@@ -4540,8 +4540,10 @@ static bool emit_builtin_call(jl_codectx_t &ctx, jl_cgval_t *ret, jl_value_t *f,
             if (nel < 0)
                 return false;
             *ret = emit_const_len_memorynew(ctx, typ, nel, inst);
-        } else
+        }
+        else {
             *ret = emit_memorynew(ctx, typ, argv[2], inst);
+        }
         return true;
     }
 
