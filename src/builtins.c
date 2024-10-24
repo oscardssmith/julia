@@ -1646,7 +1646,8 @@ JL_CALLABLE(jl_f__typevar)
 JL_CALLABLE(jl_f_memorynew)
 {
     JL_NARGS(memorynew, 2, 2);
-    JL_TYPECHK(memorynew, datatype, args[0]);
+    jl_datatype_t *jl_genericmemory_type_type = jl_datatype_type;
+    JL_TYPECHK(memorynew, genericmemory_type, args[0]);
     JL_TYPECHK(memorynew, long, args[1]);
     size_t nel = jl_unbox_long(args[1]);
     return (jl_value_t*)jl_alloc_genericmemory(args[0], nel);
