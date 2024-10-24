@@ -4533,7 +4533,7 @@ static bool emit_builtin_call(jl_codectx_t &ctx, jl_cgval_t *ret, jl_value_t *f,
         jl_genericmemory_t *inst = (jl_genericmemory_t*)((jl_datatype_t*)typ)->instance;
         if (inst == NULL)
             return false;
-        if(argv[2].constant) {
+        if (argv[2].constant) {
             if (!jl_is_long(argv[2].constant))
                 return false;
             size_t nel = jl_unbox_long(argv[2].constant);
