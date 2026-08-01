@@ -17,12 +17,12 @@ use mmtk::MMTK;
 use crate::jl_gc_mmtk_sweep_malloced_memory;
 use crate::jl_gc_scan_vm_specific_roots;
 use crate::jl_gc_sweep_stack_pools_and_mtarraylist_buffers;
-#[cfg(feature = "concurrentimmix")]
+#[cfg(feature = "concurrent_marking")]
 use crate::julia_types::_jl_task_t;
 use crate::JuliaVM;
-#[cfg(feature = "concurrentimmix")]
+#[cfg(feature = "concurrent_marking")]
 use dashmap::DashMap;
-#[cfg(feature = "concurrentimmix")]
+#[cfg(feature = "concurrent_marking")]
 use std::sync::{Arc, Mutex};
 
 pub(crate) struct StackRootBuffer {
@@ -46,7 +46,7 @@ impl SlotVisitor<JuliaVMSlot> for StackRootBuffer {
     }
 }
 
-#[cfg(feature = "concurrentimmix")]
+#[cfg(feature = "concurrent_marking")]
 lazy_static! {
     pub static ref GC_STACK_SNAPSHOTS: GCStackSnapshots = GCStackSnapshots::new();
 }
@@ -283,13 +283,13 @@ impl<C: ObjectTracerContext<JuliaVM>> GCWork<JuliaVM> for ScanFinalizersSingleTh
     }
 }
 
-#[cfg(feature = "concurrentimmix")]
+#[cfg(feature = "concurrent_marking")]
 pub struct GCStackSnapshots {
     snapshots: DashMap<usize, Arc<[ObjectReference]>>,
     task_scan_locks: DashMap<usize, Arc<Mutex<()>>>,
 }
 
-#[cfg(feature = "concurrentimmix")]
+#[cfg(feature = "concurrent_marking")]
 impl GCStackSnapshots {
     fn new() -> Self {
         Self {
