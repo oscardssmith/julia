@@ -135,8 +135,13 @@ void FinalLowerGC::lowerWriteBarrier(CallInst *target, Function &F) {
         const char *base_symbol = "MMTK_SIDE_LOG_BIT_BASE_ADDRESS";
         Value *keyed_on = parent;
 #ifdef MMTK_FIELD_BARRIER
-        // A null slot means the caller could not attribute the store to one field, so
-        // there is no field bit to test and the slow path must run unconditionally.
+        // A null slot means the caller could not attribute the store to one field. There
+        // is then no field bit to test, but the *object* bit still applies: the slow path
+        // snapshots every field of the parent and logs the object, so the same gate that
+        // serves an object-granularity plan serves this case too. Testing it matters --
+        // the slow path is a walk of the whole parent, and a store into a large `Memory`
+        // does not get a slot (element addresses are derived, in addrspace 11). Calling it
+        // unconditionally makes filling an N-element memory O(N^2).
         const bool have_slot = !isa<ConstantPointerNull>(slot);
         if (have_slot) {
             base_symbol = "MMTK_SIDE_FIELD_UNLOG_BIT_BASE_ADDRESS";
@@ -144,13 +149,6 @@ void FinalLowerGC::lowerWriteBarrier(CallInst *target, Function &F) {
         }
 #else
         (void)slot;
-#endif
-
-#ifdef MMTK_FIELD_BARRIER
-        if (!have_slot) {
-            builder.CreateCall(getOrDeclare(jl_intrinsics::queueGCRoot), { parent });
-            return;
-        }
 #endif
 
         if (INLINE_WRITE_BARRIER) {
@@ -197,7 +195,12 @@ void FinalLowerGC::lowerWriteBarrier(CallInst *target, Function &F) {
             auto mayTriggerSlowpath = SplitBlockAndInsertIfThen(is_unlogged, target, false, MDB.createBranchWeights(Weights));
             builder.SetInsertPoint(mayTriggerSlowpath);
 #ifdef MMTK_FIELD_BARRIER
-            builder.CreateCall(getOrDeclare(jl_intrinsics::queueGCRootField), { parent, slot });
+            // Without a slot there is no field to report, and the field entry would derive
+            // a metadata address from a null one. Report the object instead.
+            if (have_slot)
+                builder.CreateCall(getOrDeclare(jl_intrinsics::queueGCRootField), { parent, slot });
+            else
+                builder.CreateCall(getOrDeclare(jl_intrinsics::queueGCRoot), { parent });
 #else
             builder.CreateCall(getOrDeclare(jl_intrinsics::queueGCRoot), { parent });
 #endif
