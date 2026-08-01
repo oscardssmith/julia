@@ -294,6 +294,14 @@ impl GCTriggerPolicy<JuliaVM> for JuliaGCTrigger {
         space: Option<SpaceStats<JuliaVM>>,
         plan: &dyn Plan<VM = JuliaVM>,
     ) -> bool {
+        // mmtk-core no longer asks the binding whether collection is enabled; it now
+        // expects explicit disable/enable calls. Julia's disable counter is bumped from
+        // places that cannot make such a call (signal handlers, thread adoption), so the
+        // counter is consulted here instead, which is the same decision point the old
+        // `VMCollection::is_collection_enabled` hook was consulted from.
+        if unsafe { crate::jl_get_gc_disable_counter() } != 0 {
+            return false;
+        }
         if self.is_heap_full(plan) {
             return true;
         }
